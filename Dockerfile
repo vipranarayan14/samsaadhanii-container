@@ -1,8 +1,8 @@
 FROM ubuntu:20.04
 
-ENV MAIN_DIR="/usr/src/scl" \
-    ZEN_MAIN_DIR="$MAIN_DIR/SKT/zen" \
-    SCL_MAIN_DIR="$MAIN_DIR/scl"
+ENV MAIN_DIR="/usr/src/scl"
+ENV ZEN_MAIN_DIR="$MAIN_DIR/SKT/zen"
+ENV SCL_MAIN_DIR="$MAIN_DIR/scl"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
