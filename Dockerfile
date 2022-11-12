@@ -1,19 +1,15 @@
 FROM ubuntu:20.04
 
-ENV MAIN_DIR="/usr/src/scl"
-ENV ZEN_MAIN_DIR="$MAIN_DIR/SKT/zen"
-ENV SCL_MAIN_DIR="$MAIN_DIR/scl"
-
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt update && apt install -y \
-    # --no-install-recommends
+RUN apt-get update && apt-get install -y --no-install-recommends \
     apache2 \
     bash \
     bison \
     camlp4 \
-    default-jdk \
+    default-jdk-headless \
     flex \
+    libfl-dev \
     g++ \
     gcc \
     git \
@@ -27,11 +23,16 @@ RUN apt update && apt install -y \
     python3-pandas \
     python3-openpyxl \
     xsltproc \
-    # && rm -rf /var/lib/apt/lists/*
-    && pip3 install anytree
+    && pip3 install anytree \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV MAIN_DIR="/usr/src/samsaadhanii"
+ENV ZEN_MAIN_DIR="$MAIN_DIR/SKT/zen"
+ENV SCL_MAIN_DIR="$MAIN_DIR/scl"
 
 RUN git clone --depth 1 https://gitlab.inria.fr/huet/Zen.git "$ZEN_MAIN_DIR" \
-    && git clone --depth 1 https://github.com/samsaadhanii/scl.git "$SCL_MAIN_DIR"
+    && git clone --depth 1 https://github.com/samsaadhanii/scl.git "$SCL_MAIN_DIR" \
+    && rm -rf "$ZEN_MAIN_DIR/.git/" "$SCL_MAIN_DIR/.git/"
 
 RUN cat "$SCL_MAIN_DIR/SPEC/spec_users.txt" | sed -E \
     -e "s|^(ZENDIR=).*$|\1$ZEN_MAIN_DIR/ML|" \
