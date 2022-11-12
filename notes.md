@@ -33,3 +33,36 @@
 
 To reduce image size (scl git folder size is 250M)
 
+### Why separate build & run deps?
+
+To reduce final image size, thereby, reduce image pull time.
+
+**Build deps**
+bash
+bison
+camlp4
+default-jdk-headless
+flex
+libfl-dev
+g++
+gcc
+git
+make
+ocaml
+ocamlbuild
+
+**Runtime deps**
+apache2
+bash
+default-jre-headless
+graphviz
+lttoolbox
+perl
+python3
+
+**Unsure** (considering as runtime deps for now)
+python3-pip
+python3-pandas
+python3-openpyxl
+xsltproc
+anytree
