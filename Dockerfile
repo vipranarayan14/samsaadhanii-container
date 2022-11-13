@@ -1,4 +1,4 @@
-# image_version: 0.6.0
+# image_version: 0.6.1
 
 # STAGE1: Download build deps and make app 
 
@@ -62,11 +62,11 @@ RUN apt-get update \
 WORKDIR /
 
 # Copy app artifacts from build
-RUN --mount=source=/,target=/artifacts,from=build \
+RUN --mount=from=build,target=/artifacts \
     tar -xf "/artifacts/app.tar"
 
-# Enable cgid module in Apache
-RUN a2enmod cgid
+# Enable cgid module in Apache and prevent apache 'ServerName` warning
+RUN a2enmod cgid && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Expose Apache server port
 EXPOSE 80
