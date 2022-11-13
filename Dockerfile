@@ -1,4 +1,4 @@
-# image_version: 0.7.0
+# image_version: 0.8.0
 
 # STAGE1: Download build deps and make app 
 
@@ -73,5 +73,9 @@ RUN a2enmod cgid && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 # Expose Apache server port
 EXPOSE 80
 
+COPY --chmod=755 entrypoint.sh /
+
+ENTRYPOINT [ "/entrypoint.sh" ]
+
 # Run Apache server when container starts
-CMD ["apachectl", "-D", "FOREGROUND"]
+CMD ["start-server"]
