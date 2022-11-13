@@ -1,4 +1,4 @@
-# image_version: 0.5.0
+# image_version: 0.6.0
 
 # STAGE1: Download build deps and make app 
 
@@ -25,14 +25,15 @@ ENV SPEC_FILE="spec.txt"
 
 COPY "$SPEC_FILE" /
 
-# Download scl & zen
+# Setup scl & zen
 RUN . "/$SPEC_FILE" \
     && git clone --depth 1 https://gitlab.inria.fr/huet/Zen.git "$ZENINSTALLDIR" \
     && git clone --depth 1 https://github.com/samsaadhanii/scl.git "$SCLINSTALLDIR" \
     && rm -rf "$ZENINSTALLDIR/.git/" "$SCLINSTALLDIR/.git/" \
     && cp "$SPEC_FILE" "$SCLINSTALLDIR/" \
     && cd "$ZENINSTALLDIR/ML" && make \
-    && cd "$SCLINSTALLDIR" && ./configure && make && make install
+    && cd "$SCLINSTALLDIR" && ./configure && make && make install \
+    && tar -cf "/app.tar" "$MAIN_DIR" "$HTDOCSDIR" "$CGIDIR"
 
 
 
@@ -58,14 +59,11 @@ RUN apt-get update \
     && pip3 install anytree \
     && rm -rf /var/lib/apt/lists/*
 
-RUN --mount=source=/,target=/artifacts,from=build \
-    . "/artifacts/spec.txt" \
-    && echo $MAIN_DIR \
-    && cp -rT "/artifacts$MAIN_DIR" "$MAIN_DIR" \
-    && cp -rT "/artifacts$HTDOCSDIR" "$HTDOCSDIR" \
-    && cp -rT "/artifacts$CGIDIR" "$CGIDIR"
-
 WORKDIR /
+
+# Copy app artifacts from build
+RUN --mount=source=/,target=/artifacts,from=build \
+    tar -xf "/artifacts/app.tar"
 
 # Enable cgid module in Apache
 RUN a2enmod cgid
