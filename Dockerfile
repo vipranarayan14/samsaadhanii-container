@@ -1,4 +1,4 @@
-# image_version: 0.6.1
+# image_version: 0.7.0
 
 # STAGE1: Download build deps and make app 
 
@@ -32,8 +32,10 @@ RUN . "/$SPEC_FILE" \
     && rm -rf "$ZENINSTALLDIR/.git/" "$SCLINSTALLDIR/.git/" \
     && cp "$SPEC_FILE" "$SCLINSTALLDIR/" \
     && cd "$ZENINSTALLDIR/ML" && make \
-    && cd "$SCLINSTALLDIR" && ./configure && make && make install \
-    && tar -cf "/app.tar" "$MAIN_DIR" "$HTDOCSDIR" "$CGIDIR"
+    && cd "$SCLINSTALLDIR" \
+    && ./configure && make && make install \
+    && rm -rv "e-readers/" "dhaatupaatha/" "GOLD_DATA/" \
+    && tar -cf "/app.tar" "$APP_DIR" "$HTDOCSDIR" "$CGIDIR"
 
 
 
