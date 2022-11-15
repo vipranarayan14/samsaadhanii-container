@@ -37,7 +37,7 @@ RUN set -eux; \
     cd "$SCLINSTALLDIR"; \
     ./configure && make && make install; \
     rm -rv "e-readers/" "dhaatupaatha/" "GOLD_DATA/"; \
-    tar -cf "app.tar" "$APP_DIR" "$HTDOCSDIR" "$CGIDIR"
+    tar -cf "/app.tar" "$APP_DIR" "$HTDOCSDIR" "$CGIDIR"
 
 
 
