@@ -64,11 +64,13 @@ RUN apt-get update \
 
 SHELL ["/bin/bash", "-c"]
 
-WORKDIR /app
+WORKDIR /
 
 # Copy app artifacts from build
 RUN --mount=from=build,target=/artifacts \
     tar -xf "/artifacts/app.tar"
+
+WORKDIR /app
 
 # Enable cgid module in Apache and prevent apache 'ServerName` warning
 RUN a2enmod cgid && echo "ServerName localhost" >> /etc/apache2/apache2.conf
