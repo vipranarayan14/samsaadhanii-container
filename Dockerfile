@@ -1,7 +1,4 @@
-# image_version: 0.8.0
-
 # STAGE1: Download build deps and make app 
-
 FROM ubuntu:20.04 AS build
 
 # Install build deps
@@ -40,7 +37,6 @@ RUN . "/$SPEC_FILE" \
 
 
 # STAGE2: Copy app artifacts and create final image with runtime deps
-
 FROM ubuntu:20.04
 
 # Install runtime deps
