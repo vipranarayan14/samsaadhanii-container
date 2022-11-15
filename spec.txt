@@ -1,4 +1,4 @@
-APP_DIR=/usr/src/samsaadhanii
+APP_DIR=/app
 
 ZENINSTALLDIR=$APP_DIR/zen
 

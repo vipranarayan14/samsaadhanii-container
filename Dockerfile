@@ -20,14 +20,14 @@ RUN apt-get update \
 
 SHELL ["/bin/bash", "-c"]
 
-WORKDIR /
+WORKDIR /app
 
 # Copy SPEC file
-COPY spec.txt /
+COPY spec.txt ./
 
 # Setup SCL & ZEN
 RUN set -eux; \
-    SPEC_FILE="/spec.txt"; \
+    SPEC_FILE="spec.txt"; \
     source "$SPEC_FILE"; \
     git clone --depth 1 https://gitlab.inria.fr/huet/Zen.git "$ZENINSTALLDIR"; \
     git clone --depth 1 https://github.com/samsaadhanii/scl.git "$SCLINSTALLDIR"; \
@@ -37,7 +37,7 @@ RUN set -eux; \
     cd "$SCLINSTALLDIR"; \
     ./configure && make && make install; \
     rm -rv "e-readers/" "dhaatupaatha/" "GOLD_DATA/"; \
-    tar -cf "/app.tar" "$APP_DIR" "$HTDOCSDIR" "$CGIDIR"
+    tar -cf "app.tar" "$APP_DIR" "$HTDOCSDIR" "$CGIDIR"
 
 
 
@@ -64,7 +64,7 @@ RUN apt-get update \
 
 SHELL ["/bin/bash", "-c"]
 
-WORKDIR /
+WORKDIR /app
 
 # Copy app artifacts from build
 RUN --mount=from=build,target=/artifacts \
@@ -74,10 +74,10 @@ RUN --mount=from=build,target=/artifacts \
 RUN a2enmod cgid && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Copy entrypoint script
-COPY --chmod=755 entrypoint.sh /
+COPY --chmod=755 entrypoint.sh ./
 
 # Expose Apache server port
 EXPOSE 80
 
 # Run Apache server when container starts
-CMD ["/entrypoint.sh"]
+CMD ["./entrypoint.sh"]
