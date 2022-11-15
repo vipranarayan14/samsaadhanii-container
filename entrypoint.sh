@@ -1,20 +1,33 @@
-#!/bin/sh
+#!/bin/bash
+
+# Do not continue if there is an error
 set -e
-# Note: This is written using sh so it works in the busybox container too.
 
-# USE the trap if you need to also do manual cleanup after the service is stopped,
-#     or need to start multiple services in the one container
-trap "echo TRAPed signal" HUP INT QUIT TERM
+# Stop server gracefully when an interrupt singal is received
+handle_interrupt() {
+  echo -e "\nInterrupt signal received. Stopping server..."
 
-if [ "$1" = "start-server" ]; then
-    apachectl start
+  # Stop Apache server
+  apachectl stop
 
-    echo "Running server... Open http://localhost[:PORT]/scl/ in your browser.\n"
-    echo "Hit 'Enter' key to exit or run 'docker stop <container>'"
-    read enter
+  echo -e "Server stopped."
+  echo -e 'Bye!'
 
-    echo "Stopping server"
-    apachectl stop
-else
-    exec $@
-fi
+  exit 0
+}
+
+# Capture and handle SIGTERM (docker stop) and SIGINT (Ctrl+C) signals
+trap 'kill ${!}; handle_interrupt ' TERM INT
+
+# Start Apache server
+apachectl start
+
+echo -e "Server is running..."
+echo -e "Open http://localhost[:PORT]/scl/ in your browser."
+echo -e "\nTo stop the server use 'Ctrl+C' or run 'docker stop <container>'"
+
+# Keep container running
+while true; do
+  tail -f /dev/null &
+  wait ${!}
+done
