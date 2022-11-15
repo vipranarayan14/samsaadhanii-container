@@ -1,6 +1,6 @@
 # Samsaadhanii
 
-This is an unofficial docker image of [Samsaadhanii](http://scl.samsaadhanii.in/scl/) -- a Sanskrit computational toolkit developed by the Department of Sanskrit Studies, University of Hyderabad.
+This is a docker image of [Samsaadhanii](http://scl.samsaadhanii.in/scl/) -- a Sanskrit computational toolkit developed by the Department of Sanskrit Studies, University of Hyderabad.
 
 ## How to use?
 
