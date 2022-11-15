@@ -18,23 +18,26 @@ RUN apt-get update \
     ocaml \
     ocamlbuild
 
+SHELL ["/bin/bash", "-c"]
+
 WORKDIR /
 
 # Copy SPEC file
 COPY spec.txt /
 
 # Setup SCL & ZEN
-RUN SPEC_FILE="/spec.txt" \
-    && . "$SPEC_FILE" \
-    && git clone --depth 1 https://gitlab.inria.fr/huet/Zen.git "$ZENINSTALLDIR" \
-    && git clone --depth 1 https://github.com/samsaadhanii/scl.git "$SCLINSTALLDIR" \
-    && rm -rf "$ZENINSTALLDIR/.git/" "$SCLINSTALLDIR/.git/" \
-    && mv "$SPEC_FILE" "$SCLINSTALLDIR/" \
-    && cd "$ZENINSTALLDIR/ML" && make \
-    && cd "$SCLINSTALLDIR" \
-    && ./configure && make && make install \
-    && rm -rv "e-readers/" "dhaatupaatha/" "GOLD_DATA/" \
-    && tar -cf "/app.tar" "$APP_DIR" "$HTDOCSDIR" "$CGIDIR"
+RUN set -eux; \
+    SPEC_FILE="/spec.txt"; \
+    source "$SPEC_FILE"; \
+    git clone --depth 1 https://gitlab.inria.fr/huet/Zen.git "$ZENINSTALLDIR"; \
+    git clone --depth 1 https://github.com/samsaadhanii/scl.git "$SCLINSTALLDIR"; \
+    rm -rf "$ZENINSTALLDIR/.git/" "$SCLINSTALLDIR/.git/"; \
+    mv "$SPEC_FILE" "$SCLINSTALLDIR/"; \
+    cd "$ZENINSTALLDIR/ML" && make; \
+    cd "$SCLINSTALLDIR"; \
+    ./configure && make && make install; \
+    rm -rv "e-readers/" "dhaatupaatha/" "GOLD_DATA/"; \
+    tar -cf "/app.tar" "$APP_DIR" "$HTDOCSDIR" "$CGIDIR"
 
 
 
@@ -58,6 +61,8 @@ RUN apt-get update \
     xsltproc \
     && pip3 install anytree \
     && rm -rf /var/lib/apt/lists/*
+
+SHELL ["/bin/bash", "-c"]
 
 WORKDIR /
 
