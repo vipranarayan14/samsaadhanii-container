@@ -18,16 +18,18 @@ RUN apt-get update \
     ocaml \
     ocamlbuild
 
-ENV SPEC_FILE="spec.txt"
+WORKDIR /
 
-COPY "$SPEC_FILE" /
+# Copy SPEC file
+COPY spec.txt /
 
-# Setup scl & zen
-RUN . "/$SPEC_FILE" \
+# Setup SCL & ZEN
+RUN SPEC_FILE="/spec.txt" \
+    && . "$SPEC_FILE" \
     && git clone --depth 1 https://gitlab.inria.fr/huet/Zen.git "$ZENINSTALLDIR" \
     && git clone --depth 1 https://github.com/samsaadhanii/scl.git "$SCLINSTALLDIR" \
     && rm -rf "$ZENINSTALLDIR/.git/" "$SCLINSTALLDIR/.git/" \
-    && cp "$SPEC_FILE" "$SCLINSTALLDIR/" \
+    && mv "$SPEC_FILE" "$SCLINSTALLDIR/" \
     && cd "$ZENINSTALLDIR/ML" && make \
     && cd "$SCLINSTALLDIR" \
     && ./configure && make && make install \
