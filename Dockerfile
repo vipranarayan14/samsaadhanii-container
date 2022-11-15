@@ -70,12 +70,11 @@ RUN --mount=from=build,target=/artifacts \
 # Enable cgid module in Apache and prevent apache 'ServerName` warning
 RUN a2enmod cgid && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
+# Copy entrypoint script
+COPY --chmod=755 entrypoint.sh /
+
 # Expose Apache server port
 EXPOSE 80
 
-COPY --chmod=755 entrypoint.sh /
-
-ENTRYPOINT [ "/entrypoint.sh" ]
-
 # Run Apache server when container starts
-CMD ["start-server"]
+CMD ["/entrypoint.sh"]
