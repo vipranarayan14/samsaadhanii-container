@@ -1,4 +1,4 @@
-# Samsaadhanii
+# Samsaadhanii Container
 
 This is a docker image of [Samsaadhanii](http://scl.samsaadhanii.in/scl/) -- a Sanskrit computational toolkit developed by the Department of Sanskrit Studies, University of Hyderabad.
 
