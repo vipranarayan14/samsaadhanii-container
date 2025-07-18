@@ -38,13 +38,11 @@ RUN set -eux; \
     source "$SPEC_FILE"; \
     mv tmp_zen "$ZENINSTALLDIR"; \
     mv tmp_scl "$SCLINSTALLDIR"; \
-    rm -rf "$ZENINSTALLDIR/.git/" "$SCLINSTALLDIR/.git/"; \
     mv "$SPEC_FILE" "$SCLINSTALLDIR/"; \
     cd "$ZENINSTALLDIR/ML" && make; \
     cd "$SCLINSTALLDIR"; \
     ./configure && make && make install; \
-    rm -rv "e-readers/" "dhaatupaatha/" "GOLD_DATA/"; \
-    tar -cf "/app.tar" "$APP_DIR" "$HTDOCSDIR" "$CGIDIR"
+    tar -cf "/app.tar" "$HTDOCSDIR" "$CGIDIR"
 
 
 
