@@ -22,6 +22,13 @@ SHELL ["/bin/bash", "-c"]
 
 WORKDIR /app
 
+# Download ZEN & SCL
+RUN git clone https://gitlab.inria.fr/huet/Zen.git tmp_zen; \
+    # TEMP FIX: Use a prev version of Zen since the latest changes 
+    # causes dependency issues (ocamlfind missing) during build.
+    cd tmp_zen && git checkout fba9c4571e2c91513de8d4e63098f5ca14c3cd95; \
+    cd .. && git clone --depth 1 https://github.com/samsaadhanii/scl.git tmp_scl;
+
 # Copy SPEC file
 COPY spec.txt ./
 
@@ -29,8 +36,8 @@ COPY spec.txt ./
 RUN set -eux; \
     SPEC_FILE="spec.txt"; \
     source "$SPEC_FILE"; \
-    git clone --depth 1 https://gitlab.inria.fr/huet/Zen.git "$ZENINSTALLDIR"; \
-    git clone --depth 1 https://github.com/samsaadhanii/scl.git "$SCLINSTALLDIR"; \
+    mv tmp_zen "$ZENINSTALLDIR"; \
+    mv tmp_scl "$SCLINSTALLDIR"; \
     rm -rf "$ZENINSTALLDIR/.git/" "$SCLINSTALLDIR/.git/"; \
     mv "$SPEC_FILE" "$SCLINSTALLDIR/"; \
     cd "$ZENINSTALLDIR/ML" && make; \
