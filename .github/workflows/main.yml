@@ -146,12 +146,14 @@ jobs:
       # ----------------------------------------------------------------
       # PATH A: The Build (Runs only if image is missing)
       # ----------------------------------------------------------------
-      - name: Build and Push (New Commit)
+      - name: Build and Push New Changes
         if: steps.check.outputs.exists == 'false'
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
+          # To build for arm64 platforms (Apple Silicon, Rasberry Pi, etc.)
+          platforms: linux/amd64,linux/arm64
           # We pass the SHA to the Dockerfile in case you need to 'git checkout' inside it
           build-args: |
             UPSTREAM_SHA=${{ steps.upstream.outputs.full_sha }}
@@ -166,7 +168,7 @@ jobs:
       # ----------------------------------------------------------------
       # PATH B: The Retag (Runs only if image already exists)
       # ----------------------------------------------------------------
-      - name: Retag Existing Image (Optimization)
+      - name: Retag Existing Image
         if: steps.check.outputs.exists == 'true'
         run: |
           EXISTING_TAG="sha-${{ steps.upstream.outputs.commit_sha }}"
