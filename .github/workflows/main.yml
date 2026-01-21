@@ -66,7 +66,7 @@ on:
 
 env:
   # The Upstream Repo you want to track
-  UPSTREAM_REPO: "https://github.com/scl/samsaadhanii.git"
+  UPSTREAM_REPO: "https://github.com/samsaadhanii/scl.git"
   
   # Your Image Names
   IMAGE_NAME: "samsaadhanii"
@@ -81,11 +81,23 @@ jobs:
       - name: Checkout Your Repo (with Dockerfile)
         uses: actions/checkout@v3
 
-      - name: Get Upstream Details
+- name: Get Upstream Details
         id: upstream
+        shell: bash  # Ensure bash for pipefail support
         run: |
+          # Enable pipefail so if git fails, the whole step fails
+          set -e
+          set -o pipefail
+
           # 1. Get the latest SHA from the upstream remote
           LATEST_SHA=$(git ls-remote ${{ env.UPSTREAM_REPO }} HEAD | awk '{ print $1 }')
+          
+          # SAFETY CHECK: Stop immediately if SHA is empty
+          if [ -z "$LATEST_SHA" ]; then
+            echo "::error::Failed to fetch SHA. The variable is empty."
+            exit 1
+          fi
+
           SHORT_SHA=${LATEST_SHA:0:7}
           
           # 2. Generate a Date Tag (e.g., 20231027-0200)
