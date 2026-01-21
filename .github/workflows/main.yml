@@ -63,6 +63,12 @@ on:
   schedule:
     - cron: '0 2 * * *' # Runs at 2:00 AM UTC every night
   workflow_dispatch:    # Allows manual trigger
+    inputs:
+        force_build:
+          description: 'Force a rebuild even if the image exists?'
+          type: boolean
+          required: false
+          default: false
 
 env:
   # The Upstream Repo you want to track
@@ -130,6 +136,14 @@ jobs:
       - name: Check if Image Exists
         id: check
         run: |
+          # Check if the user requested a forced build
+          if [[ "${{ github.event.inputs.force_build }}" == "true" ]]; then
+             echo "Manual force build requested. Skipping existence check."
+             echo "exists=false" >> $GITHUB_OUTPUT
+             exit 0
+          fi
+
+          # Standard check (only runs if force_build is NOT true)
           IMAGE_URI="${{ env.DOCKER_HUB_SLUG }}:sha-${{ steps.upstream.outputs.commit_sha }}"
           
           echo "Checking for existing image: $IMAGE_URI"
