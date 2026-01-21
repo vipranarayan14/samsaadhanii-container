@@ -1,46 +1,113 @@
-name: Build and Publish Docker Image
+# name: Build and Publish Docker Image
+
+# on:
+#   push:
+#     tags:
+#       - "v*"
+#   workflow_dispatch:
+
+# env:
+#   IMAGE_REPOSITORY: "samsaadhanii"
+#   IMAGE_NAMESPACE_DOCKER: ${{ secrets.DOCKER_HUB_USERNAME }}
+#   IMAGE_NAMESPACE_GHCR: ghcr.io/${{ github.repository_owner }}
+
+# jobs:
+#   push_to_registry:
+#     name: Build and Publish Docker Image
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout the Repo
+#         uses: actions/checkout@v3
+
+#       - name: Extract metadata for tagging image
+#         id: meta
+#         uses: docker/metadata-action@v4
+#         with:
+#           images: |
+#             ${{ env.IMAGE_NAMESPACE_DOCKER }}/${{ env.IMAGE_REPOSITORY }}
+#             ${{ env.IMAGE_NAMESPACE_GHCR }}/${{ env.IMAGE_REPOSITORY }}
+#           tags: |
+#             type=semver,pattern={{version}}
+#             type=semver,pattern={{major}}.{{minor}}
+#             type=sha
+  
+#       # To build for arm64 platforms (Apple Silicon, Rasberry Pi, etc.)
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v3
+
+#       - name: Login to Docker Hub
+#         uses: docker/login-action@v2
+#         with:
+#           username: ${{ secrets.DOCKER_HUB_USERNAME }}
+#           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+#       - name: Login to GHCR
+#         uses: docker/login-action@v2
+#         with:
+#           registry: ghcr.io
+#           username: ${{ github.repository_owner }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
+
+#       - name: Build and push
+#         uses: docker/build-push-action@v3
+#         with:
+#           context: .
+#           push: true
+#           platforms: linux/amd64,linux/arm64
+#           tags: ${{ steps.meta.outputs.tags }}
+
+
+name: Nightly Build and Publish Samsaadhanii Image
 
 on:
-  push:
-    tags:
-      - "v*"
-  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *' # Runs at 2:00 AM UTC every night
+  workflow_dispatch:    # Allows manual trigger
 
 env:
-  IMAGE_REPOSITORY: "samsaadhanii"
-  IMAGE_NAMESPACE_DOCKER: ${{ secrets.DOCKER_HUB_USERNAME }}
-  IMAGE_NAMESPACE_GHCR: ghcr.io/${{ github.repository_owner }}
+  # The Upstream Repo you want to track
+  UPSTREAM_REPO: "https://github.com/scl/samsaadhanii.git"
+  
+  # Your Image Names
+  IMAGE_NAME: "samsaadhanii"
+  DOCKER_HUB_SLUG: ${{ secrets.DOCKER_HUB_USERNAME }}/samsaadhanii
+  GHCR_SLUG: ghcr.io/${{ github.repository_owner }}/samsaadhanii
 
 jobs:
-  push_to_registry:
-    name: Build and Publish Docker Image
+  smart_build:
+    name: Check, Build, or Retag
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the Repo
+      - name: Checkout Your Repo (with Dockerfile)
         uses: actions/checkout@v3
 
-      - name: Extract metadata for tagging image
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: |
-            ${{ env.IMAGE_NAMESPACE_DOCKER }}/${{ env.IMAGE_REPOSITORY }}
-            ${{ env.IMAGE_NAMESPACE_GHCR }}/${{ env.IMAGE_REPOSITORY }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha
-  
-      # To build for arm64 platforms (Apple Silicon, Rasberry Pi, etc.)
+      - name: Get Upstream Details
+        id: upstream
+        run: |
+          # 1. Get the latest SHA from the upstream remote
+          LATEST_SHA=$(git ls-remote ${{ env.UPSTREAM_REPO }} HEAD | awk '{ print $1 }')
+          SHORT_SHA=${LATEST_SHA:0:7}
+          
+          # 2. Generate a Date Tag (e.g., 20231027-0200)
+          DATE_TAG=$(date +%Y%m%d-%H%M)
+          
+          echo "Upstream SHA: $SHORT_SHA"
+          echo "Date Tag: $DATE_TAG"
+          
+          # Output variables for next steps
+          echo "commit_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "full_sha=$LATEST_SHA" >> $GITHUB_OUTPUT
+          echo "date_tag=$DATE_TAG" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: Login to Registries
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
+      
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
@@ -48,10 +115,84 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Check if Image Exists
+        id: check
+        run: |
+          IMAGE_URI="${{ env.DOCKER_HUB_SLUG }}:sha-${{ steps.upstream.outputs.commit_sha }}"
+          
+          echo "Checking for existing image: $IMAGE_URI"
+          
+          # We use buildx imagetools inspect. It returns exit code 0 if found, 1 if missing.
+          if docker buildx imagetools inspect $IMAGE_URI > /dev/null 2>&1; then
+            echo "Image exists!"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Image not found. Needs build."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ----------------------------------------------------------------
+      # PATH A: The Build (Runs only if image is missing)
+      # ----------------------------------------------------------------
+      - name: Build and Push (New Commit)
+        if: steps.check.outputs.exists == 'false'
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
+          # We pass the SHA to the Dockerfile in case you need to 'git checkout' inside it
+          build-args: |
+            UPSTREAM_SHA=${{ steps.upstream.outputs.full_sha }}
+          tags: |
+            ${{ env.DOCKER_HUB_SLUG }}:latest
+            ${{ env.DOCKER_HUB_SLUG }}:sha-${{ steps.upstream.outputs.commit_sha }}
+            ${{ env.DOCKER_HUB_SLUG }}:${{ steps.upstream.outputs.date_tag }}
+            ${{ env.GHCR_SLUG }}:latest
+            ${{ env.GHCR_SLUG }}:sha-${{ steps.upstream.outputs.commit_sha }}
+            ${{ env.GHCR_SLUG }}:${{ steps.upstream.outputs.date_tag }}
+
+      # ----------------------------------------------------------------
+      # PATH B: The Retag (Runs only if image already exists)
+      # ----------------------------------------------------------------
+      - name: Retag Existing Image (Optimization)
+        if: steps.check.outputs.exists == 'true'
+        run: |
+          EXISTING_TAG="sha-${{ steps.upstream.outputs.commit_sha }}"
+          NEW_DATE_TAG="${{ steps.upstream.outputs.date_tag }}"
+          
+          echo "Skipping build. Adding new date tag ($NEW_DATE_TAG) to existing image ($EXISTING_TAG)."
+          
+          # Retag for Docker Hub
+          docker buildx imagetools create \
+            --tag ${{ env.DOCKER_HUB_SLUG }}:$NEW_DATE_TAG \
+            --tag ${{ env.DOCKER_HUB_SLUG }}:latest \
+            ${{ env.DOCKER_HUB_SLUG }}:$EXISTING_TAG
+            
+          # Retag for GHCR
+          docker buildx imagetools create \
+            --tag ${{ env.GHCR_SLUG }}:$NEW_DATE_TAG \
+            --tag ${{ env.GHCR_SLUG }}:latest \
+            ${{ env.GHCR_SLUG }}:$EXISTING_TAG
+
+      # ----------------------------------------------------------------
+      # REPORTING
+      # ----------------------------------------------------------------
+      # - name: Email Report
+      #   if: always()
+      #   uses: dawidd6/action-send-mail@v3
+      #   with:
+      #     server_address: smtp.gmail.com
+      #     server_port: 465
+      #     username: ${{ secrets.MAIL_USERNAME }}
+      #     password: ${{ secrets.MAIL_PASSWORD }}
+      #     subject: Docker Job: ${{ steps.check.outputs.exists == 'true' && 'Retagged' || 'Built New' }} Image
+      #     to: your-email@example.com
+      #     from: GitHub Actions
+      #     body: |
+      #       Job Status: ${{ job.status }}
+      #       Action: ${{ steps.check.outputs.exists == 'true' && 'Quick Retag (No Build)' || 'Full Build' }}
+            
+      #       Upstream SHA: ${{ steps.upstream.outputs.commit_sha }}
+      #       New Tag Generated: ${{ steps.upstream.outputs.date_tag }}
+            
+      #       View Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
