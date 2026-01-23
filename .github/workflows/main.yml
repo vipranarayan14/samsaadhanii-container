@@ -61,7 +61,8 @@ name: Nightly Build and Publish Samsaadhanii Image
 
 on:
   schedule:
-    - cron: '0 2 * * *' # Runs at 2:00 AM UTC every night
+    # Runs every day at 05:47 UTC (11:17 AM IST - less peak time)
+    - cron: '47 5 * * *'
   workflow_dispatch:    # Allows manual trigger
     inputs:
         force_build:
