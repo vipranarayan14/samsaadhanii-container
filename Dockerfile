@@ -1,5 +1,5 @@
 # STAGE1: Download build deps and make app 
-FROM ubuntu:20.04 AS build
+FROM ubuntu:24.04 AS build
 
 # Install build deps
 RUN apt-get update \
@@ -10,12 +10,15 @@ RUN apt-get update \
     camlp4 \
     default-jdk-headless \
     flex \
+    libcamlp-streams-ocaml-dev \
+    libcamlp4-ocaml-dev \
     libfl-dev \
     g++ \
     gcc \
     git \
     make \
     ocaml \
+    ocaml-findlib \
     ocamlbuild
 
 SHELL ["/bin/bash", "-c"]
@@ -47,7 +50,7 @@ RUN set -eux; \
 
 
 # STAGE2: Copy app artifacts and create final image with runtime deps
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 # Install runtime deps
 RUN apt-get update \
@@ -64,7 +67,7 @@ RUN apt-get update \
     python3-pandas \
     python3-openpyxl \
     xsltproc \
-    && pip3 install anytree \
+    && pip3 install --no-cache-dir --break-system-packages anytree \
     && rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-c"]
